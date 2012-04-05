@@ -21,14 +21,19 @@ You can try the Ruby interface in a IRB console:
 
 You have to pass one or more URLs to a local or remote Monit [HTTP server](http://mmonit.com/monit/documentation/monit.html#monit_httpd):
 
-    cluster = Monittr::Cluster.new ['http://localhost:2812/']
+    cluster = Monittr::Cluster.new([
+      {:url => "http://localhost:2812"},
+      {:url => "https://localhost:2812", :params => {:user => "admin", :password => "secret"}}
+    ])
 
 In case you don't have a running Monit server at hand, use the provided FakeWeb setup:
 
     require 'fakeweb'
     FakeWeb.register_uri(:get, 'http://localhost:2812/_status?format=xml', :body => File.read('test/fixtures/status.xml') ); nil
 
-    cluster = Monittr::Cluster.new ['http://localhost:2812/']
+    cluster = Monittr::Cluster.new([
+      {:url => "http://localhost:2812"},
+    ])
 
 Now, you can display the information from the cluster:
 

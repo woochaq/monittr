@@ -15,8 +15,15 @@ FakeWeb.register_uri(:get, 'http://localhost:2812/_status?format=xml',
 # -----------------------------------------------------------------------------
 
 # --- Set URLs to your Monit instances here -----------------------------------
-set :monit_urls,  %w[ http://localhost:2812 http://localhost:2812 ]
-# -----------------------------------------------------------------------------
+set :monit_urls,  [
+  {:url => "http://localhost:2812"}, {:url => "http://localhost:2812"}
+]
+
+# --- Set URLs to your monit instances via SSL here ---------------------------
+#set :monit_urls, [
+#  {:url => "https://localhost:2812", :params => {:user => "admin", :password => "secret"}}
+#]
+ #-----------------------------------------------------------------------------
 
 # --- Use your own template ---------------------------------------------------
 # set :template,   Proc.new { File.join(root, 'template.erb') }

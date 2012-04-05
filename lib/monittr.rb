@@ -13,7 +13,7 @@ module Monittr
     attr_reader :servers
 
     def initialize(urls=[])
-      @servers = urls.map { |url| Server.fetch(url) }
+      @servers = urls.map { |server| Server.fetch(server[:url], server[:params]) }
     end
 
   end
@@ -45,15 +45,24 @@ module Monittr
 
     # Retrieve Monit status XML from the URL
     #
-    def self.fetch(url='http://admin:monit@localhost:2812')
+    def self.fetch(url='http://admin:monit@localhost:2812', params = {})
+      params = {} if params.nil?
       Timeout::timeout(1) do
         monit_url  = url
         monit_url += '/' unless url =~ /\/$/
         monit_url += '_status?format=xml' unless url =~ /_status\?format=xml$/
-        self.new url, RestClient.get(monit_url)
+        self.new url, RestClient::Request.execute(request_parameters(monit_url, params))
       end
     rescue Exception => e
       self.new url, %Q|<error status="3" name="#{e.class}" message="#{e.message}" />|
+    end
+
+    def self.request_parameters(monit_url, params = {})
+      {:method    => :get,
+       :url       => monit_url,
+       :user      => nil,
+       :password  => nil
+      }.merge(params)
     end
 
     def inspect
@@ -150,7 +159,7 @@ module Monittr
                    :message => e.message } )
       end
     end
-          
+
     # A "host" service in Monit
     #
     # http://mmonit.com/monit/documentation/monit.html#connection_testing

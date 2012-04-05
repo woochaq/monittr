@@ -8,8 +8,8 @@ module Monittr
 
       should "be initialized with URLs" do
         assert_nothing_raised do
-          cluster = Monittr::Cluster.new %w[ http://admin:monit@localhost:2812
-                                             http://admin:monit@localhost:2812 ]
+          cluster = Monittr::Cluster.new [ {:url => "http://admin:monit@localhost:2812"},
+                                           {:url => "http://admin:monit@localhost:2812"} ]
           assert_not_nil cluster.servers
           assert_equal 2, cluster.servers.size
         end
@@ -17,8 +17,8 @@ module Monittr
 
       should "not fail on invalid URLS" do
         assert_nothing_raised do
-          cluster = Monittr::Cluster.new %w[ ~INVALID
-                                             http://admin:monit@localhost:2812 ]
+          cluster = Monittr::Cluster.new [ {:url => "~INVALID" },
+                                           {:url => "http://admin:monit@localhost:2812"} ]
           assert_not_nil cluster.servers
           assert_equal 2, cluster.servers.size
           assert_equal 3, cluster.servers.first.system.status
@@ -29,8 +29,8 @@ module Monittr
       end
 
       should "not fail on out-of-order URLs" do
-        cluster = Monittr::Cluster.new %w[ http://not-working
-                                           http://admin:monit@localhost:2812 ]
+        cluster = Monittr::Cluster.new [ {:url => "http://not-working" },
+                                         {:url => "http://admin:monit@localhost:2812"} ]
         assert_not_nil cluster.servers
         assert_equal 2, cluster.servers.size
         assert_equal 3, cluster.servers.first.system.status
@@ -38,8 +38,8 @@ module Monittr
       end
 
       should "timeout properly for non-responding URLs" do
-        RestClient.expects(:get).raises(Timeout::Error)
-        cluster = Monittr::Cluster.new %w[ http://admin:monit@localhost:2812 ]
+        RestClient::Request.expects(:execute).raises(Timeout::Error)
+        cluster = Monittr::Cluster.new [{:url => 'http://admin:monit@localhost:2812'}]
         assert_not_nil cluster.servers
         assert_equal 1, cluster.servers.size
         assert_equal 3, cluster.servers.first.system.status
@@ -115,11 +115,19 @@ module Monittr
         assert_equal '0.009', @server.hosts[0].response_time
       end
 
+      should "return request parameters" do
+        expected ={:url=>"http://admin:monit@localhost:2812",
+                   :method=>:get,
+                   :user=>"user",
+                   :password=>"secret"}
+        assert_equal expected, Server.request_parameters("http://admin:monit@localhost:2812",
+                                                          {:user => "user", :password => "secret"})
+      end
     end
 
     [ Services::System, Services::Filesystem, Services::Process ].each do |klass|
       context "#{klass}" do
-        should "deal with invalid XML" do        
+        should "deal with invalid XML" do
           assert_nothing_raised do
             part = klass.new('KRUPITZOWKA')
             assert_nil part.name
